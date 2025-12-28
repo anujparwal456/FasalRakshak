@@ -1,0 +1,55 @@
+<svg width="600" height="240" viewBox="0 0 600 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#0d9488" />
+    </linearGradient>
+    <linearGradient id="wheatGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#b45309" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#15803d" />
+      <stop offset="50%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#16a34a" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <path d="M70 60C30 80 15 120 10 160L20 165L25 155C40 120 55 90 90 85V75Z" fill="#4ade80" opacity="0.2"/>
+
+  <g transform="translate(15, 60)">
+    <rect x="10" y="20" width="4" height="60" rx="2" fill="url(#wheatGrad)" transform="rotate(-12)" />
+    <path d="M5 15L15 20L5 25Z" fill="#d97706" />
+    <path d="M25 15L15 20L25 25Z" fill="#d97706" />
+  </g>
+
+  <rect x="60" y="65" width="80" height="80" rx="16" fill="url(#shieldGrad)" transform="rotate(6, 100, 105)" />
+  <rect x="60" y="60" width="80" height="80" rx="16" fill="url(#shieldGrad)" stroke="white" stroke-opacity="0.2" stroke-width="2"/>
+
+  <g stroke="white" stroke-width="1.5" stroke-opacity="0.4">
+    <line x1="100" y1="75" x2="100" y2="90" />
+    <line x1="100" y1="110" x2="100" y2="125" />
+    <line x1="75" y1="100" x2="90" y2="100" />
+    <line x1="110" y1="100" x2="125" y2="100" />
+    <circle cx="100" cy="100" r="4" fill="white" fill-opacity="0.6" />
+  </g>
+
+  <path d="M100 78C100 78 112 82 112 90C112 105 100 118 100 118C100 118 88 105 88 90C88 82 100 78 100 78Z" 
+        fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+  <path d="M130 65L132 72L139 74L132 76L130 83L128 76L121 74L128 72Z" fill="#fde047" />
+
+  <g transform="translate(145, 120)">
+    <rect width="2.5" height="35" rx="1.25" fill="#15803d" />
+    <circle cx="1.25" cy="5" r="4" fill="#16a34a" />
+    <circle cx="1.25" cy="12" r="3" fill="#22c55e" />
+  </g>
+
+  <text x="170" y="115" font-family="Arial, sans-serif" font-weight="bold" font-size="48" fill="url(#textGrad)">FasalRakshak</text>
+  <text x="170" y="145" font-family="Arial, sans-serif" font-weight="600" font-size="18" fill="#16a34a">फसल रक्षक — Crop Protector</text>
+</svg>

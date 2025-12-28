@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - FasalRakshak</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo-section" onclick="window.location.href='index.html'" style="cursor: pointer;">
+                        <div class="logo-wrapper logo-wrapper-small">
+                            <div class="logo-bg-rotate"></div>
+                            <div class="logo-bg-main">
+                                <div class="logo-icon logo-icon-small">
+                                    <i data-lucide="shield"></i>
+                                    <i data-lucide="sparkles" class="sparkle-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="logo-text">
+                            <h1 class="logo-title-small">FasalRakshak</h1>
+                            <p class="logo-subtitle-small">फसल रक्षक</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container main-content">
+            <div class="auth-container">
+                <div class="auth-card card">
+                    <div class="card-header card-header-accent text-center">
+                        <h3 class="card-title justify-center">
+                            <i data-lucide="user-plus"></i>
+                            Create Account
+                        </h3>
+                        <p class="card-description">Join FasalRakshak to protect your crops</p>
+                    </div>
+                    <div class="card-content">
+                        <form id="signupForm" class="auth-form" onsubmit="handleSignup(event)">
+                            <!-- Alert Messages -->
+                            <div id="signupAlert" class="alert hidden"></div>
+
+                            <!-- Full Name Field -->
+                            <div class="form-group">
+                                <label class="form-label" for="signupName">
+                                    <i data-lucide="user"></i>
+                                    Full Name
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="signupName" 
+                                    class="form-input" 
+                                    placeholder="Your full name"
+                                    required
+                                />
+                            </div>
+
+                            <!-- Email Field -->
+                            <div class="form-group">
+                                <label class="form-label" for="signupEmail">
+                                    <i data-lucide="mail"></i>
+                                    Email Address
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="signupEmail" 
+                                    class="form-input" 
+                                    placeholder="your.email@example.com"
+                                    required
+                                />
+                            </div>
+
+                            <!-- Password Field -->
+                            <div class="form-group">
+                                <label class="form-label" for="signupPassword">
+                                    <i data-lucide="lock"></i>
+                                    Password
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="signupPassword" 
+                                    class="form-input" 
+                                    placeholder="Create a strong password"
+                                    required
+                                    minlength="6"
+                                />
+                                <p class="form-hint">Minimum 6 characters</p>
+                            </div>
+
+                            <!-- Confirm Password Field -->
+                            <div class="form-group">
+                                <label class="form-label" for="confirmPassword">
+                                    <i data-lucide="shield-check"></i>
+                                    Confirm Password
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="confirmPassword" 
+                                    class="form-input" 
+                                    placeholder="Re-enter your password"
+                                    required
+                                />
+                            </div>
+
+                            <!-- Terms Checkbox -->
+                            <div class="form-checkbox-group">
+                                <input type="checkbox" id="agreeTerms" class="form-checkbox" required>
+                                <label for="agreeTerms" class="checkbox-label">
+                                    I agree to the Terms of Service and Privacy Policy
+                                </label>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                                <i data-lucide="user-plus"></i>
+                                Create Account
+                            </button>
+                        </form>
+
+                        <!-- Divider -->
+                        <div class="auth-divider">
+                            <span>or</span>
+                        </div>
+
+                        <!-- Login Link -->
+                        <div class="auth-switch">
+                            Already have an account? 
+                            <a href="login.html" class="auth-link">Login here</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

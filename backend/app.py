@@ -1,23 +1,22 @@
 """
 FasalRakshak - Plant Disease Detection Backend
-Production-ready Flask backend
 """
 
 import os
-import io
-import numpy as np
-import tensorflow as tf
-from PIL import Image
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import tensorflow as tf
+import numpy as np
+from PIL import Image
+import io
 from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Import blueprints
 from routes.disease_report import disease_report_bp
 from routes.download_report import download_report_bp
-
-# Load environment variables
-load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -36,7 +35,7 @@ model = tf.keras.models.load_model(
 )
 print("✅ Model loaded successfully")
 
-# Class names for predictions
+# Class names
 class_names = [
     "Apple___Apple_scab",
     "Apple___Black_rot",
@@ -78,25 +77,13 @@ class_names = [
     "Tomato___healthy"
 ]
 
-# ----------------------------
-# Health Check Route
-# ----------------------------
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
     return jsonify({
-        "message": "🌾 FasalRakshak Backend is running!",
-        "status": "success",
-        "version": "1.0.0",
-        "endpoints": {
-            "predict": "/predict (POST)",
-            "disease_report": "/api/disease-report (POST)",
-            "download_report": "/api/download-report (POST)"
-        }
+        "message": "FasalRakshak Backend is running 🚀",
+        "status": "OK"
     })
 
-# ----------------------------
-# Prediction Route
-# ----------------------------
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
@@ -104,48 +91,25 @@ def predict():
         if not image_file:
             return jsonify({"error": "No image provided"}), 400
 
-        # Image preprocessing
-        image = Image.open(io.BytesIO(image_file.read())).convert("RGB")
-        image = image.resize((224, 224))
+        image = Image.open(io.BytesIO(image_file.read())).resize((224, 224))
         img_array = np.array(image) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
-        # Prediction
         predictions = model.predict(img_array)
         predicted_index = int(np.argmax(predictions))
 
-        if predicted_index >= len(class_names):
-            return jsonify({"error": "Invalid prediction index"}), 500
-
-        disease_name = class_names[predicted_index]
+        disease = class_names[predicted_index]
         confidence = float(np.max(predictions))
 
         return jsonify({
-            "disease": disease_name,
+            "disease": disease,
             "confidence": confidence
-        }), 200
+        })
 
     except Exception as e:
-        print("❌ Prediction Error:", e)
         return jsonify({"error": str(e)}), 500
 
 
-# ----------------------------
-# App Runner (Cloud Compatible)
-# ----------------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-
-    print("\n" + "=" * 50)
-    print("🌾 FasalRakshak Backend Server")
-    print("=" * 50)
-    print(f"📍 Running on: http://0.0.0.0:{port}")
-    print("📊 ML Model: MobileNetV2 (38 classes)")
-    print("🤖 AI: Gemini + TensorFlow")
-    print("=" * 50 + "\n")
-
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=False
-    )
+    port = int(os.environ.get("PORT", 5000))  # 👈 Railway-safe
+    app.run(host="0.0.0.0", port=port)

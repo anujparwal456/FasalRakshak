@@ -23,6 +23,24 @@ class SafeDense(Dense):
         kwargs.pop("quantization_config", None)
         super().__init__(*args, **kwargs)
 
+# ================================
+# 🔥 SAFE INPUTLAYER FIX (KERAS COMPATIBILITY)
+# ================================
+from tensorflow.keras.layers import InputLayer
+
+class SafeInputLayer(InputLayer):
+    def __init__(self, *args, **kwargs):
+        # Remove incompatible kwargs from old Keras versions
+        kwargs.pop("batch_shape", None)
+        kwargs.pop("optional", None)
+        
+        # Handle the case where batch_shape was used
+        if "batch_input_shape" not in kwargs and "shape" not in kwargs:
+            # Set default shape if needed
+            kwargs["shape"] = (224, 224, 3)
+        
+        super().__init__(*args, **kwargs)
+
 # Load environment variables
 load_dotenv()
 
@@ -46,7 +64,10 @@ print("🔄 Loading TensorFlow model...")
 model = tf.keras.models.load_model(
     "models/MobileNetV2_best.h5",
     compile=False,
-    custom_objects={"Dense": SafeDense}
+    custom_objects={
+        "Dense": SafeDense,
+        "InputLayer": SafeInputLayer
+    }
 )
 
 print("✅ Model loaded successfully")

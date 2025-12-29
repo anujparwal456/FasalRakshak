@@ -1,12 +1,15 @@
 """
 FasalRakshak - Plant Disease Detection Backend
+Production-ready Flask backend
 """
+
+import os
+import io
+import numpy as np
+import tensorflow as tf
+from PIL import Image
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import tensorflow as tf
-import numpy as np
-from PIL import Image
-import io
 from dotenv import load_dotenv
 
 # Import blueprints
@@ -75,85 +78,74 @@ class_names = [
     "Tomato___healthy"
 ]
 
-
-@app.route("/")
+# ----------------------------
+# Health Check Route
+# ----------------------------
+@app.route("/", methods=["GET"])
 def home():
-    """Health check endpoint"""
     return jsonify({
-        "message": "FasalRakshak Backend is running!",
+        "message": "🌾 FasalRakshak Backend is running!",
+        "status": "success",
         "version": "1.0.0",
-        "endpoints": [
-            "/predict - POST - ML disease prediction",
-            "/api/disease-report - POST - AI report generation",
-            "/api/download-report - POST - PDF download"
-        ]
+        "endpoints": {
+            "predict": "/predict (POST)",
+            "disease_report": "/api/disease-report (POST)",
+            "download_report": "/api/download-report (POST)"
+        }
     })
 
-
+# ----------------------------
+# Prediction Route
+# ----------------------------
 @app.route("/predict", methods=["POST"])
 def predict():
-    """
-    ML model prediction endpoint
-    
-    Accepts: multipart/form-data with 'image' file
-    Returns: { "disease": "...", "confidence": 0.95 }
-    """
     try:
-        # Get image from request
         image_file = request.files.get("image")
         if not image_file:
             return jsonify({"error": "No image provided"}), 400
-        
-        # Preprocess image
-        image = Image.open(io.BytesIO(image_file.read())).resize((224, 224))
+
+        # Image preprocessing
+        image = Image.open(io.BytesIO(image_file.read())).convert("RGB")
+        image = image.resize((224, 224))
         img_array = np.array(image) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
-        
-        # Make prediction
+
+        # Prediction
         predictions = model.predict(img_array)
-        
-        # Debug logging
-        print(f"📊 Prediction - Output shape: {predictions.shape}")
-        print(f"📊 Prediction - Classes count: {len(class_names)}")
-        
-        # Get predicted class index
         predicted_index = int(np.argmax(predictions))
-        
-        # Validate index
+
         if predicted_index >= len(class_names):
-            return jsonify({
-                "error": "Prediction index out of range",
-                "predicted_index": predicted_index,
-                "total_classes": len(class_names)
-            }), 500
-        
-        # Get disease name and confidence
+            return jsonify({"error": "Invalid prediction index"}), 500
+
         disease_name = class_names[predicted_index]
         confidence = float(np.max(predictions))
-        
-        print(f"✅ Prediction successful:")
-        print(f"   Disease: {disease_name}")
-        print(f"   Confidence: {confidence:.2%}")
-        
+
         return jsonify({
             "disease": disease_name,
             "confidence": confidence
         }), 200
-        
+
     except Exception as e:
-        print(f"❌ Prediction error: {e}")
-        import traceback
-        traceback.print_exc()
+        print("❌ Prediction Error:", e)
         return jsonify({"error": str(e)}), 500
 
 
+# ----------------------------
+# App Runner (Cloud Compatible)
+# ----------------------------
 if __name__ == "__main__":
-    print("\n" + "="*50)
+    port = int(os.environ.get("PORT", 5000))
+
+    print("\n" + "=" * 50)
     print("🌾 FasalRakshak Backend Server")
-    print("="*50)
-    print("📍 Running on: http://localhost:5000")
+    print("=" * 50)
+    print(f"📍 Running on: http://0.0.0.0:{port}")
     print("📊 ML Model: MobileNetV2 (38 classes)")
-    print("🤖 AI: Google Gemini")
-    print("="*50 + "\n")
-    
-    app.run(port=5000, debug=True)
+    print("🤖 AI: Gemini + TensorFlow")
+    print("=" * 50 + "\n")
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )

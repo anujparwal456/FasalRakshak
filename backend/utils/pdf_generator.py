@@ -74,7 +74,7 @@ def generate_pdf_report(report_data, filename, language="en"):
     
     # Generate QR Code
     qr = qrcode.QRCode(version=1, box_size=10, border=2)
-    qr_url = f"https://fasalrakshak.com/report/{report_id}"
+    qr_url = f"https://fasal-rakshak-l9n4.vercel.app/"
     qr.add_data(qr_url)
     qr.make(fit=True)
     qr_img = qr.make_image(fill_color="black", back_color="white")

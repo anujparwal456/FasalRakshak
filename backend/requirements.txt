@@ -3,7 +3,7 @@ flask-cors==6.0.2
 tensorflow==2.20.0
 numpy==1.26.4
 protobuf>=5.28.0
-grpcio-status==1.46.3
+qrcode[pil]==7.4.2
 pillow==12.0.0
 google-genai==1.56.0
 reportlab==4.4.7

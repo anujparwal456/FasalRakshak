@@ -30,14 +30,16 @@ from tensorflow.keras.layers import InputLayer
 
 class SafeInputLayer(InputLayer):
     def __init__(self, *args, **kwargs):
-        # Remove incompatible kwargs from old Keras versions
-        kwargs.pop("batch_shape", None)
-        kwargs.pop("optional", None)
+        # Convert batch_shape (old) to batch_input_shape (new)
+        if "batch_shape" in kwargs:
+            batch_shape = kwargs.pop("batch_shape")
+            if "batch_input_shape" not in kwargs:
+                kwargs["batch_input_shape"] = batch_shape
         
-        # Handle the case where batch_shape was used
-        if "batch_input_shape" not in kwargs and "shape" not in kwargs:
-            # Set default shape if needed
-            kwargs["shape"] = (224, 224, 3)
+        # Remove incompatible kwargs from old Keras versions
+        kwargs.pop("optional", None)
+        kwargs.pop("sparse", None)
+        kwargs.pop("ragged", None)
         
         super().__init__(*args, **kwargs)
 

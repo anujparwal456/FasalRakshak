@@ -3,13 +3,16 @@ FasalRakshak - Plant Disease Detection Backend
 """
 
 import os
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import tensorflow as tf
+import io
 import numpy as np
 from PIL import Image
-import io
 from dotenv import load_dotenv
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+import tensorflow as tf
+from tensorflow.keras.layers import Dense  # 🔑 FIX FOR Dense DESERIALIZATION
 
 # Load environment variables
 load_dotenv()
@@ -26,16 +29,22 @@ CORS(app)
 app.register_blueprint(disease_report_bp)
 app.register_blueprint(download_report_bp)
 
-# Load ML model
+# ================================
+# 🔥 LOAD ML MODEL (FIXED)
+# ================================
 print("🔄 Loading TensorFlow model...")
+
 model = tf.keras.models.load_model(
     "models/MobileNetV2_best.h5",
     compile=False,
-    safe_mode=False
+    custom_objects={"Dense": Dense}  # ✅ CRITICAL FIX
 )
+
 print("✅ Model loaded successfully")
 
-# Class names
+# ================================
+# CLASS NAMES
+# ================================
 class_names = [
     "Apple___Apple_scab",
     "Apple___Black_rot",
@@ -77,6 +86,9 @@ class_names = [
     "Tomato___healthy"
 ]
 
+# ================================
+# ROUTES
+# ================================
 @app.route("/")
 def home():
     return jsonify({
@@ -91,25 +103,28 @@ def predict():
         if not image_file:
             return jsonify({"error": "No image provided"}), 400
 
-        image = Image.open(io.BytesIO(image_file.read())).resize((224, 224))
+        # Image preprocessing
+        image = Image.open(io.BytesIO(image_file.read())).convert("RGB")
+        image = image.resize((224, 224))
         img_array = np.array(image) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
+        # Prediction
         predictions = model.predict(img_array)
         predicted_index = int(np.argmax(predictions))
 
-        disease = class_names[predicted_index]
-        confidence = float(np.max(predictions))
-
         return jsonify({
-            "disease": disease,
-            "confidence": confidence
+            "disease": class_names[predicted_index],
+            "confidence": float(np.max(predictions))
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
+# ================================
+# ENTRY POINT (LOCAL ONLY)
+# ================================
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # 👈 Railway-safe
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

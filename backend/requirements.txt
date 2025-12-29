@@ -7,3 +7,5 @@ tensorflow==2.15.0
 numpy<2
 python-dotenv
 gunicorn
+google-genai==1.56.0
+google-generativeai==0.8.4

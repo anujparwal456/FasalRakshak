@@ -7,7 +7,7 @@ import os
 import json
 import re
 from dotenv import load_dotenv
-from google import genai
+import google.generativeai as genai
 
 # =========================
 # Load Environment Variables
@@ -23,9 +23,10 @@ if not GEMINI_API_KEY:
     )
 
 # =========================
-# Initialize Gemini Client
+# Initialize Gemini (STABLE)
 # =========================
-client = genai.Client(api_key=GEMINI_API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # =====================================================
 # NORMALIZATION (CRITICAL – NEVER REMOVE)
@@ -73,7 +74,7 @@ def normalize_report(report: dict, crop: str, disease: str) -> dict:
 # =====================================================
 def generate_disease_report(crop_name: str, disease_name: str) -> dict:
     """
-    Generate complete disease report using Gemini 2.5 Flash
+    Generate complete disease report using Gemini Flash
     """
 
     prompt = f"""
@@ -81,98 +82,37 @@ You are an expert agricultural scientist and senior government crop advisor.
 
 Generate an ACCURATE and COMPLETE plant disease report for a farmer.
 
-📋 MANDATORY RULES:
+MANDATORY RULES:
 1. Respond ONLY in valid JSON format
 2. NO markdown, NO explanations, NO extra text
-3. EVERY field MUST be filled (never empty, never null)
-4. Use simple farmer-friendly language
-5. Severity must be: "Low", "Medium", or "High"
-6. Crop name must be clearly written as: {crop_name}
-7. All array fields must have at least 3 items
+3. EVERY field MUST be filled
+4. Severity must be Low, Medium, or High
+5. All arrays must have at least 3 items
 
-🌾 CROP INFORMATION:
 Crop Name: {crop_name}
 Disease Name: {disease_name}
 
-📝 GENERATE THIS EXACT JSON STRUCTURE:
-
-{{
-  "crop_name": "{crop_name}",
-  "disease_name": "{disease_name}",
-  "severity": "Low or Medium or High",
-  "affected_area": "Percentage and body part affected (e.g., 40% of leaves)",
-  "recovery_timeline": "Exact time (e.g., 2–4 weeks)",
-  "spread_risk": "Low or Medium or High",
-  "disease_description": "Clear 2-3 sentence explanation of the disease and its impact",
-  "symptoms": [
-    "First specific visual symptom",
-    "Second visible symptom",
-    "Third symptom farmers can observe",
-    "Fourth characteristic sign"
-  ],
-  "treatment": [
-    "First immediate action to take",
-    "Second treatment method",
-    "Third control measure"
-  ],
-  "organic_treatment": [
-    "First organic solution",
-    "Second natural remedy"
-  ],
-  "fertilizer_recommendation": [
-    "First fertilizer type with NPK ratio",
-    "Second nutrient supplement"
-  ],
-  "prevention": [
-    "First preventive practice",
-    "Second prevention method",
-    "Third protective measure"
-  ]
-}}
-
-⚠️ IMPORTANT:
-- Do NOT use null, N/A, or "unknown"
-- Do NOT leave any field blank
-- Do NOT use markdown formatting
-- Always include crop_name as "{crop_name}"
-- Always include disease_name as "{disease_name}"
-- Return ONLY the JSON, nothing else
-
-Now generate the complete JSON report:
+Return this JSON structure exactly.
 """
 
     try:
-        print("📌 Sending prompt to Gemini 2.5 Flash...")
+        print("📌 Sending prompt to Gemini...")
 
-        response = client.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
 
-        raw_text = None
-
-        if hasattr(response, "text") and response.text:
-            raw_text = response.text.strip()
-        elif hasattr(response, "candidates") and response.candidates:
-            raw_text = response.candidates[0].content.parts[0].text.strip()
+        raw_text = response.text.strip() if response.text else None
 
         if not raw_text:
             raise ValueError("Empty Gemini response")
 
-        print("🔍 Gemini raw response preview:")
-        print(raw_text[:300])
-
-        # Extract JSON safely
         match = re.search(r"\{[\s\S]*\}", raw_text)
         if not match:
             raise ValueError("No valid JSON found")
 
         parsed_report = json.loads(match.group())
 
-        final_report = normalize_report(parsed_report, crop_name, disease_name)
-
-        print("✅ Gemini disease report generated successfully")
-        return final_report
+        print("✅ Gemini disease report generated")
+        return normalize_report(parsed_report, crop_name, disease_name)
 
     except Exception as e:
         print(f"❌ Gemini generation failed: {e}")
@@ -185,15 +125,7 @@ Now generate the complete JSON report:
 # =====================================================
 def generate_with_fallback(prompt: str) -> str:
     try:
-        response = client.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-
-        if hasattr(response, "text") and response.text:
-            return response.text.strip()
-
-        return "AI response unavailable."
-
+        response = model.generate_content(prompt)
+        return response.text.strip() if response.text else "AI response unavailable."
     except Exception as e:
         return f"Gemini Error: {str(e)}"

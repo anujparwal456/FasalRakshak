@@ -1,6 +1,6 @@
 flask==3.1.2
 flask-cors==6.0.2
-
+qrcode[pil]==7.4.2
 # ML
 tensorflow==2.16.1
 numpy==1.26.4
@@ -17,3 +17,4 @@ gunicorn
 
 # Env
 python-dotenv==1.2.1
+

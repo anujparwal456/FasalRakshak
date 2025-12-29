@@ -1,20 +1,11 @@
 flask==3.1.2
 flask-cors==6.0.2
-qrcode[pil]==7.4.2
-# ML
-tensorflow==2.16.1
+tensorflow==2.20.0
+tensorflow-intel==2.20.0
 numpy==1.26.4
+protobuf==3.20.3
+grpcio-status==1.46.3
 pillow==12.0.0
-
-# AI / GenAI
 google-genai==1.56.0
-
-# PDF
 reportlab==4.4.7
-
-# Server
-gunicorn
-
-# Env
 python-dotenv==1.2.1
-

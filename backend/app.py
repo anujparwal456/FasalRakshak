@@ -63,14 +63,29 @@ app.register_blueprint(download_report_bp)
 # ================================
 print("🔄 Loading TensorFlow model...")
 
-model = tf.keras.models.load_model(
-    "models/MobileNetV2_best.h5",
-    compile=False,
-    custom_objects={
-        "Dense": SafeDense,
-        "InputLayer": SafeInputLayer
-    }
-)
+try:
+    # Try loading with safe mode to skip dtype policy validation
+    model = tf.keras.models.load_model(
+        "models/MobileNetV2_best.h5",
+        compile=False,
+        safe_mode=False,
+        custom_objects={
+            "Dense": SafeDense,
+            "InputLayer": SafeInputLayer
+        }
+    )
+except Exception as e:
+    print(f"⚠️ Safe mode failed ({str(e)[:50]}...), trying legacy load...")
+    # Fallback: Load without custom objects validation
+    import keras
+    model = keras.models.load_model(
+        "models/MobileNetV2_best.h5",
+        compile=False,
+        custom_objects={
+            "Dense": SafeDense,
+            "InputLayer": SafeInputLayer
+        }
+    )
 
 print("✅ Model loaded successfully")
 

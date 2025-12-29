@@ -12,7 +12,16 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 import tensorflow as tf
-from tensorflow.keras.layers import Dense  # 🔑 FIX FOR Dense DESERIALIZATION
+from tensorflow.keras.layers import Dense
+
+# ================================
+# 🔥 SAFE DENSE FIX (IMPORTANT)
+# ================================
+class SafeDense(Dense):
+    def __init__(self, *args, **kwargs):
+        # 🔑 REMOVE quantization_config IF PRESENT
+        kwargs.pop("quantization_config", None)
+        super().__init__(*args, **kwargs)
 
 # Load environment variables
 load_dotenv()
@@ -30,14 +39,14 @@ app.register_blueprint(disease_report_bp)
 app.register_blueprint(download_report_bp)
 
 # ================================
-# 🔥 LOAD ML MODEL (FIXED)
+# 🔥 LOAD ML MODEL (FINAL FIX)
 # ================================
 print("🔄 Loading TensorFlow model...")
 
 model = tf.keras.models.load_model(
     "models/MobileNetV2_best.h5",
     compile=False,
-    custom_objects={"Dense": Dense}  # ✅ CRITICAL FIX
+    custom_objects={"Dense": SafeDense}
 )
 
 print("✅ Model loaded successfully")

@@ -1,16 +1,32 @@
+# ============================================
+# FasalRakshak Backend - Production Dependencies
+# ============================================
+
+# Web Framework
 flask==3.1.2
 flask-cors==6.0.2
-qrcode[pil]==7.4.2
+gunicorn==23.0.0
+
+# Machine Learning (TensorFlow/Keras)
+# ✅ TensorFlow 2.15.0 is compatible with Keras 2.15.0
+tensorflow==2.15.0
+h5py>=3.0.0
+numpy==1.26.4
+
+# Image Processing
 pillow==12.0.0
+qrcode[pil]==7.4.2
+
+# PDF Generation
 reportlab==4.4.7
 
-# TensorFlow (CPU, Linux compatible)
-tensorflow==2.15.0
-
-# Gemini
+# Gemini AI Integration
 google-generativeai==0.7.2
+google-auth>=2.15.0
+google-auth-oauthlib>=1.0.0
 
 # Utilities
-numpy<2
 python-dotenv==1.0.1
-gunicorn==23.0.0
+
+# Note: All versions pinned for stability on Render
+# Update only if you encounter specific compatibility issues

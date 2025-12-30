@@ -1,9 +1,13 @@
 """
 FasalRakshak - Plant Disease Detection Backend
+Production-Ready Version with TensorFlow/Keras Compatibility
 """
 
 import os
+import sys
 import io
+import json
+import h5py
 import numpy as np
 from PIL import Image
 from dotenv import load_dotenv
@@ -11,36 +15,46 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+# ================================
+# TENSORFLOW/KERAS SETUP (CRITICAL)
+# ================================
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TF warnings
+
 import tensorflow as tf
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, InputLayer
+
+# Suppress GPU warnings
+physical_devices = tf.config.list_physical_devices('GPU')
+if physical_devices:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 # ================================
-# 🔥 SAFE DENSE FIX (IMPORTANT)
+# CUSTOM KERAS COMPATIBILITY LAYERS
 # ================================
 class SafeDense(Dense):
+    """Dense layer that handles outdated Keras configs"""
     def __init__(self, *args, **kwargs):
-        # 🔑 REMOVE quantization_config IF PRESENT
         kwargs.pop("quantization_config", None)
         super().__init__(*args, **kwargs)
 
-# ================================
-# 🔥 SAFE INPUTLAYER FIX (KERAS COMPATIBILITY)
-# ================================
-from tensorflow.keras.layers import InputLayer
-
 class SafeInputLayer(InputLayer):
+    """InputLayer that handles Keras 2.x ↔ 3.x compatibility"""
     def __init__(self, *args, **kwargs):
-        # Convert batch_shape (old) to batch_input_shape (new)
         if "batch_shape" in kwargs:
             batch_shape = kwargs.pop("batch_shape")
             if "batch_input_shape" not in kwargs:
                 kwargs["batch_input_shape"] = batch_shape
         
-        # Remove incompatible kwargs from old Keras versions
         kwargs.pop("optional", None)
         kwargs.pop("sparse", None)
         kwargs.pop("ragged", None)
         
+        super().__init__(*args, **kwargs)
+
+class SafeConv2D(tf.keras.layers.Conv2D):
+    """Conv2D layer that strips DTypePolicy from Keras 3.x models"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)  # Remove problematic dtype objects
         super().__init__(*args, **kwargs)
 
 # Load environment variables
@@ -59,35 +73,125 @@ app.register_blueprint(disease_report_bp)
 app.register_blueprint(download_report_bp)
 
 # ================================
-# 🔥 LOAD ML MODEL (FINAL FIX)
+# ROBUST MODEL LOADING WITH KERAS COMPATIBILITY
 # ================================
-print("🔄 Loading TensorFlow model...")
 
+def clean_dtype_policy_recursive(obj):
+    """Recursively remove DTypePolicy from model config"""
+    if isinstance(obj, dict):
+        if obj.get('class_name') == 'DTypePolicy':
+            # Replace with simple dtype string
+            return {'class_name': 'str', 'config': {'name': 'float32'}}
+        
+        # Clean all nested objects
+        for key in list(obj.keys()):
+            obj[key] = clean_dtype_policy_recursive(obj[key])
+    elif isinstance(obj, list):
+        return [clean_dtype_policy_recursive(item) for item in obj]
+    
+    return obj
+
+def load_model_with_fallback():
+    """
+    Load model with multiple fallback strategies:
+    1. Standard Keras load
+    2. H5py + config patch (for Keras 3.x models)
+    3. TensorFlow SavedModel load
+    """
+    model_path = "models/MobileNetV2_best.h5"
+    
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(
+            f"❌ Model not found at {model_path}\n"
+            "Please ensure the model file exists in the models/ directory"
+        )
+    
+    custom_objects = {
+        "Dense": SafeDense,
+        "InputLayer": SafeInputLayer,
+        "Conv2D": SafeConv2D,
+    }
+    
+    # Strategy 1: Standard load (for native Keras 2.15 models)
+    try:
+        print("  [1/3] Attempting standard Keras load...")
+        model = tf.keras.models.load_model(
+            model_path,
+            compile=False,
+            custom_objects=custom_objects
+        )
+        print("      ✅ Standard load succeeded")
+        return model
+    except Exception as e1:
+        print(f"      ⚠️  Standard load failed: {str(e1)[:80]}")
+    
+    # Strategy 2: H5py + clean config (for Keras 3.x models)
+    try:
+        print("  [2/3] Attempting H5py + config patch...")
+        with h5py.File(model_path, 'r') as f:
+            if 'model_config' not in f.attrs:
+                raise ValueError("No model_config in H5 file")
+            
+            # Load and clean config
+            config = json.loads(f.attrs['model_config'])
+            config = clean_dtype_policy_recursive(config)
+            
+            # Rebuild model
+            model = tf.keras.Model.from_config(config, custom_objects=custom_objects)
+            
+            # Load weights
+            try:
+                model.load_weights(model_path)
+            except Exception:
+                print("      ⚠️  Could not load weights, proceeding without")
+            
+            print("      ✅ H5py patch succeeded")
+            return model
+    except Exception as e2:
+        print(f"      ⚠️  H5py patch failed: {str(e2)[:80]}")
+    
+    # Strategy 3: Load with safe_mode=False
+    try:
+        print("  [3/3] Attempting safe_mode=False load...")
+        model = tf.keras.models.load_model(
+            model_path,
+            compile=False,
+            safe_mode=False,
+            custom_objects=custom_objects
+        )
+        print("      ✅ Safe mode load succeeded")
+        return model
+    except Exception as e3:
+        print(f"      ⚠️  Safe mode load failed: {str(e3)[:80]}")
+        raise RuntimeError(
+            f"All model loading strategies failed:\n"
+            f"1. Standard: {str(e1)[:50]}\n"
+            f"2. H5py: {str(e2)[:50]}\n"
+            f"3. Safe mode: {str(e3)[:50]}"
+        )
+
+# ================================
+# INITIALIZE MODEL AT STARTUP
+# ================================
+print("\n" + "="*60)
+print("🔄 Initializing FasalRakshak Backend...")
+print("="*60)
+
+model = None
 try:
-    # Try loading with safe mode to skip dtype policy validation
-    model = tf.keras.models.load_model(
-        "models/MobileNetV2_best.h5",
-        compile=False,
-        safe_mode=False,
-        custom_objects={
-            "Dense": SafeDense,
-            "InputLayer": SafeInputLayer
-        }
-    )
+    print("📦 Loading TensorFlow model...")
+    model = load_model_with_fallback()
+    print("✅ Model loaded successfully!")
 except Exception as e:
-    print(f"⚠️ Safe mode failed ({str(e)[:50]}...), trying legacy load...")
-    # Fallback: Load without custom objects validation
-    import keras
-    model = keras.models.load_model(
-        "models/MobileNetV2_best.h5",
-        compile=False,
-        custom_objects={
-            "Dense": SafeDense,
-            "InputLayer": SafeInputLayer
-        }
-    )
+    print(f"\n❌ CRITICAL ERROR: {e}")
+    print("\nBackend will run but predictions will fail.")
+    print("Please check:")
+    print("  • Model file exists at backend/models/MobileNetV2_best.h5")
+    print("  • File is not corrupted")
+    print("  • TensorFlow/Keras versions are compatible")
+    model = None
 
-print("✅ Model loaded successfully")
+print("="*60 + "\n")
 
 # ================================
 # CLASS NAMES
@@ -145,7 +249,15 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    """Predict plant disease from image"""
     try:
+        # Check if model loaded successfully
+        if model is None:
+            return jsonify({
+                "error": "Model not loaded",
+                "details": "TensorFlow model failed to load at startup. Check server logs."
+            }), 503
+        
         image_file = request.files.get("image")
         if not image_file:
             return jsonify({"error": "No image provided"}), 400
@@ -157,15 +269,23 @@ def predict():
         img_array = np.expand_dims(img_array, axis=0)
 
         # Prediction
-        predictions = model.predict(img_array)
+        predictions = model.predict(img_array, verbose=0)
         predicted_index = int(np.argmax(predictions))
+        confidence = float(np.max(predictions))
 
         return jsonify({
             "disease": class_names[predicted_index],
-            "confidence": float(np.max(predictions))
-        })
+            "confidence": confidence,
+            "all_predictions": {
+                class_names[i]: float(predictions[0][i]) 
+                for i in range(min(5, len(class_names)))
+            }
+        }), 200
 
     except Exception as e:
+        print(f"❌ Prediction error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 

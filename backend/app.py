@@ -63,6 +63,7 @@ load_dotenv()
 # Import blueprints
 from routes.disease_report import disease_report_bp
 from routes.download_report import download_report_bp
+from routes.chat import chat_bp
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -71,6 +72,7 @@ CORS(app)
 # Register blueprints
 app.register_blueprint(disease_report_bp)
 app.register_blueprint(download_report_bp)
+app.register_blueprint(chat_bp)
 
 # ================================
 # ROBUST MODEL LOADING WITH KERAS COMPATIBILITY
@@ -112,6 +114,11 @@ def load_model_with_fallback():
         "Conv2D": SafeConv2D,
     }
     
+    # Store errors to avoid Python 3.10+ exception scoping issues
+    error_e1 = None
+    error_e2 = None
+    error_e3 = None
+    
     # Strategy 1: Standard load (for native Keras 2.15 models)
     try:
         print("  [1/3] Attempting standard Keras load...")
@@ -122,8 +129,9 @@ def load_model_with_fallback():
         )
         print("      ✅ Standard load succeeded")
         return model
-    except Exception as e1:
-        print(f"      ⚠️  Standard load failed: {str(e1)[:80]}")
+    except Exception as e:
+        error_e1 = str(e)[:80]
+        print(f"      ⚠️  Standard load failed: {error_e1}")
     
     # Strategy 2: H5py + clean config (for Keras 3.x models)
     try:
@@ -147,8 +155,9 @@ def load_model_with_fallback():
             
             print("      ✅ H5py patch succeeded")
             return model
-    except Exception as e2:
-        print(f"      ⚠️  H5py patch failed: {str(e2)[:80]}")
+    except Exception as e:
+        error_e2 = str(e)[:80]
+        print(f"      ⚠️  H5py patch failed: {error_e2}")
     
     # Strategy 3: Load with safe_mode=False
     try:
@@ -161,13 +170,14 @@ def load_model_with_fallback():
         )
         print("      ✅ Safe mode load succeeded")
         return model
-    except Exception as e3:
-        print(f"      ⚠️  Safe mode load failed: {str(e3)[:80]}")
+    except Exception as e:
+        error_e3 = str(e)[:80]
+        print(f"      ⚠️  Safe mode load failed: {error_e3}")
         raise RuntimeError(
             f"All model loading strategies failed:\n"
-            f"1. Standard: {str(e1)[:50]}\n"
-            f"2. H5py: {str(e2)[:50]}\n"
-            f"3. Safe mode: {str(e3)[:50]}"
+            f"1. Standard: {error_e1}\n"
+            f"2. H5py: {error_e2}\n"
+            f"3. Safe mode: {error_e3}"
         )
 
 # ================================

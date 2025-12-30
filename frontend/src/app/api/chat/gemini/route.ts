@@ -14,13 +14,13 @@ Analyze the given image carefully and answer the user's question accurately.
 Rules:
 - Focus only on agriculture-related insights
 - If disease is detected, mention:
-  - Crop name
-  - Disease name
-  - Severity (Low / Medium / High)
-  - Symptoms
-  - Organic treatment
-  - Chemical treatment (if needed)
-  - Prevention tips
+   - Crop name
+   - Disease name
+   - Severity (Low / Medium / High)
+   - Symptoms
+   - Organic treatment
+   - Chemical treatment (if needed)
+   - Prevention tips
 - If image is unclear, politely ask for a clearer image
 - Keep language simple and farmer-friendly
 - Do not include markdown unless necessary`;

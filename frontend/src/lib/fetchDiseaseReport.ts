@@ -21,7 +21,8 @@ export async function fetchDiseaseReport(diseaseName: string): Promise<DiseaseRe
   try {
     console.log("📡 Fetching Gemini report for:", diseaseName);
 
-    const response = await fetch("http://localhost:5000/api/disease-report", {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://fasalrakshak.onrender.com"
+    const response = await fetch(`${backendUrl}/api/disease-report`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

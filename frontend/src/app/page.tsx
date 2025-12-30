@@ -120,7 +120,8 @@ export default function Home() {
       const formData = new FormData()
       formData.append("image", imageFile)
 
-      const res = await fetch("http://localhost:5000/predict", {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://fasalrakshak.onrender.com"
+      const res = await fetch(`${backendUrl}/predict`, {
         method: "POST",
         body: formData,
       })

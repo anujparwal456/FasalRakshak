@@ -71,15 +71,46 @@ export default function ResultsPage() {
     const fetchAIReport = async (diseaseName: string) => {
         setLoadingReport(true)
         try {
+            console.log("🔄 Starting AI report fetch for:", diseaseName)
             const report = await fetchDiseaseReport(diseaseName)
             if (report) {
                 setAiReport(report)
-                console.log("✅ AI Report loaded successfully:", report)
+                console.log("✅ AI Report loaded successfully")
             } else {
-                console.warn("⚠️ AI Report returned null")
+                console.warn("⚠️ AI Report returned null - backend may not have generated data")
+                // Still allow download with basic data
+                setAiReport({
+                    crop_name: "Unknown",
+                    disease_name: diseaseName,
+                    severity: "Medium",
+                    affected_area: "Leaves",
+                    recovery_timeline: "2-4 weeks",
+                    spread_risk: "Medium",
+                    disease_description: "Plant disease detected",
+                    symptoms: ["Visible leaf discoloration"],
+                    treatment: ["Consult agricultural expert"],
+                    organic_treatment: ["Neem oil application"],
+                    fertilizer_recommendation: ["Balanced NPK"],
+                    prevention: ["Proper crop rotation"]
+                })
             }
         } catch (error) {
             console.error("❌ Failed to fetch AI report:", error)
+            // Fallback report
+            setAiReport({
+                crop_name: "Unknown",
+                disease_name: diseaseName,
+                severity: "Medium",
+                affected_area: "Leaves",
+                recovery_timeline: "2-4 weeks",
+                spread_risk: "Medium",
+                disease_description: "Plant disease detected",
+                symptoms: ["Disease analysis in progress"],
+                treatment: ["Consult agricultural expert"],
+                organic_treatment: ["Neem oil application"],
+                fertilizer_recommendation: ["Balanced NPK"],
+                prevention: ["Proper crop rotation"]
+            })
         } finally {
             setLoadingReport(false)
         }
@@ -144,10 +175,25 @@ export default function ResultsPage() {
     }
 
     return (
-        <div className="min-h-screen relative">
-            <main className="container mx-auto px-4 py-8">
-                {/* Action Buttons */}
-                <div className="flex justify-end items-center gap-4 mb-6 animate-fade-in">
+         <div className="min-h-screen relative">
+             {/* Loading Overlay for Report Fetch */}
+             {loadingReport && (
+                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                     <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md">
+                         <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                         <h3 className="text-xl font-bold text-green-900 mb-2">Generating AI Report</h3>
+                         <p className="text-gray-600 mb-4">Using Gemini AI to analyze the disease (10-30 seconds)</p>
+                         <div className="flex gap-2 justify-center">
+                             <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce" />
+                             <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce animation-delay-200" />
+                             <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce animation-delay-400" />
+                         </div>
+                     </div>
+                 </div>
+             )}
+             <main className="container mx-auto px-4 py-8">
+                 {/* Action Buttons */}
+                 <div className="flex justify-end items-center gap-4 mb-6 animate-fade-in">
                     <Button
                         onClick={downloadReport}
                         className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all"

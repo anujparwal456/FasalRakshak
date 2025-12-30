@@ -21,7 +21,7 @@ qrcode[pil]==7.4.2
 reportlab==4.4.7
 
 # Gemini AI Integration
-google-generativeai>=0.7.2
+google-generativeai==0.8.6
 google-auth>=2.15.0
 google-auth-oauthlib>=1.0.0
 

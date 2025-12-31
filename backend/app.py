@@ -78,6 +78,18 @@ class SafeActivation(tf.keras.layers.Activation):
         kwargs.pop("dtype", None)
         super().__init__(*args, **kwargs)
 
+class SafeDepthwiseConv2D(tf.keras.layers.DepthwiseConv2D):
+    """DepthwiseConv2D layer that handles Keras 2.x ↔ 3.x compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
+class SafeGlobalAveragePooling2D(tf.keras.layers.GlobalAveragePooling2D):
+    """GlobalAveragePooling2D that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
 # Load environment variables
 load_dotenv()
 
@@ -100,11 +112,18 @@ app.register_blueprint(chat_bp)
 # ================================
 
 def clean_dtype_policy_recursive(obj):
-    """Recursively remove DTypePolicy from model config"""
+    """Recursively remove DTypePolicy and incompatible Keras 3.x config from model config"""
     if isinstance(obj, dict):
+        # Replace DTypePolicy objects
         if obj.get('class_name') == 'DTypePolicy':
-            # Replace with simple dtype string
             return {'class_name': 'str', 'config': {'name': 'float32'}}
+        
+        # Clean problematic config keys from layer configs
+        if 'config' in obj and isinstance(obj['config'], dict):
+            config = obj['config']
+            # Remove Keras 3.x specific keys that break Keras 2.x
+            for key in ['dtype', 'quantization_config', 'backend', 'optional', 'sparse', 'ragged', 'virtual_batch_size', 'adjustment']:
+                config.pop(key, None)
         
         # Clean all nested objects
         for key in list(obj.keys()):
@@ -136,6 +155,8 @@ def load_model_with_fallback():
         "BatchNormalization": SafeBatchNormalization,
         "ReLU": SafeReLU,
         "Activation": SafeActivation,
+        "DepthwiseConv2D": SafeDepthwiseConv2D,
+        "GlobalAveragePooling2D": SafeGlobalAveragePooling2D,
     }
     
     # Store errors to avoid Python 3.10+ exception scoping issues

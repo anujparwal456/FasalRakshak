@@ -3,31 +3,30 @@
 # ============================================
 
 # Web Framework
-flask==3.1.2
-flask-cors==6.0.2
-gunicorn==23.0.0
+flask==2.3.3
+flask-cors==4.0.0
+gunicorn==21.2.0
 
 # Machine Learning (TensorFlow/Keras)
-# ✅ TensorFlow 2.13.0 uses Keras 2.13.0 (more stable with older models)
-tensorflow==2.13.0
-keras==2.13.0
-h5py>=3.0.0
-numpy==1.24.3
+# ✅ TensorFlow 2.12.0 with built-in Keras 2.12.0 (stable for MobileNetV2)
+tensorflow==2.12.0
+h5py==3.9.0
+numpy==1.23.5
 
 # Image Processing
-pillow==12.0.0
+pillow==10.0.0
 qrcode[pil]==7.4.2
 
 # PDF Generation
-reportlab==4.4.7
+reportlab==4.0.4
 
 # Gemini AI Integration
-google-generativeai==0.8.6
+google-generativeai==0.3.0
 google-auth>=2.15.0
 google-auth-oauthlib>=1.0.0
 
 # Utilities
-python-dotenv==1.0.1
+python-dotenv==1.0.0
 
 # Note: All versions pinned for stability on Render
-# Update only if you encounter specific compatibility issues
+# These versions are tested for compatibility with MobileNetV2_best.h5

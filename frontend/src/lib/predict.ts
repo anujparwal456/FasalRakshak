@@ -12,9 +12,12 @@ export async function predictDisease(image: File | string) {
       formData.append("image", image);
     }
 
-    // ✅ Correct backend URL
+    // ✅ Correct backend URL with fallback
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://fasalrakshak.onrender.com";
+    console.log("📡 Predicting disease with backend:", backendUrl);
+    
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/predict`,
+      `${backendUrl}/predict`,
       {
         method: "POST",
         body: formData,
@@ -24,14 +27,16 @@ export async function predictDisease(image: File | string) {
     // ❌ If backend fails
     if (!res.ok) {
       const text = await res.text();
-      console.error("ML API Error:", text);
-      throw new Error("Prediction failed");
+      console.error("❌ ML API Error:", res.status, text);
+      throw new Error(`Prediction failed: ${res.status}`);
     }
 
     // ✅ Success
-    return await res.json();
+    const data = await res.json();
+    console.log("✅ Prediction successful:", data.disease);
+    return data;
   } catch (error) {
-    console.error("ML API request failed:", error);
+    console.error("❌ ML API request failed:", error);
     throw error;
   }
 }

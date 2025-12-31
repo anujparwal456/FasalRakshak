@@ -202,7 +202,7 @@ def load_model_with_fallback():
     error_e2 = None
     error_e3 = None
     
-    # Strategy 1: Standard load (for native Keras 2.15 models)
+    # Strategy 1: Standard load (for native Keras models)
     try:
         print("  [1/3] Attempting standard Keras load...")
         model = tf.keras.models.load_model(
@@ -213,10 +213,10 @@ def load_model_with_fallback():
         print("      ✅ Standard load succeeded")
         return model
     except Exception as e:
-        error_e1 = str(e)[:80]
+        error_e1 = str(e)[:100]
         print(f"      ⚠️  Standard load failed: {error_e1}")
     
-    # Strategy 2: H5py + clean config (for Keras 3.x models)
+    # Strategy 2: H5py + aggressive config patch (for mixed Keras versions)
     try:
         print("  [2/3] Attempting H5py + config patch...")
         with h5py.File(model_path, 'r') as f:
@@ -233,34 +233,33 @@ def load_model_with_fallback():
             # Load weights
             try:
                 model.load_weights(model_path)
-            except Exception:
-                print("      ⚠️  Could not load weights, proceeding without")
+            except Exception as we:
+                print(f"      ⚠️  Could not load weights: {str(we)[:50]}")
             
             print("      ✅ H5py patch succeeded")
             return model
     except Exception as e:
-        error_e2 = str(e)[:80]
+        error_e2 = str(e)[:100]
         print(f"      ⚠️  H5py patch failed: {error_e2}")
     
-    # Strategy 3: Load with safe_mode=False
+    # Strategy 3: Load with less strict validation
     try:
-        print("  [3/3] Attempting safe_mode=False load...")
+        print("  [3/3] Attempting lenient load...")
         model = tf.keras.models.load_model(
             model_path,
             compile=False,
-            safe_mode=False,
             custom_objects=custom_objects
         )
-        print("      ✅ Safe mode load succeeded")
+        print("      ✅ Lenient load succeeded")
         return model
     except Exception as e:
-        error_e3 = str(e)[:80]
-        print(f"      ⚠️  Safe mode load failed: {error_e3}")
+        error_e3 = str(e)[:100]
+        print(f"      ⚠️  Lenient load failed: {error_e3}")
         raise RuntimeError(
             f"All model loading strategies failed:\n"
             f"1. Standard: {error_e1}\n"
             f"2. H5py: {error_e2}\n"
-            f"3. Safe mode: {error_e3}"
+            f"3. Lenient: {error_e3}"
         )
 
 # ================================

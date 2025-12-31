@@ -121,12 +121,29 @@ export default function Home() {
       formData.append("image", imageFile)
 
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://fasalrakshak.onrender.com"
+      console.log("🔄 Scanning with backend:", backendUrl)
+      
       const res = await fetch(`${backendUrl}/predict`, {
         method: "POST",
         body: formData,
       })
 
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error("❌ Backend error:", res.status, errorText)
+        alert(`Backend error: ${res.status}. Check console for details.`)
+        return
+      }
+
       const data = await res.json()
+
+      if (!data.disease) {
+        console.error("❌ Invalid response:", data)
+        alert("Backend returned invalid data. Check console.")
+        return
+      }
+
+      console.log("✅ Disease detected:", data.disease)
 
       await saveScanResult({
         disease: data.disease,
@@ -145,8 +162,9 @@ export default function Home() {
       )
 
       router.push("/results")
-    } catch {
-      alert("Backend not running")
+    } catch (error) {
+      console.error("❌ Scan error:", error)
+      alert("Backend not running. Check console for details.")
     } finally {
       setIsScanning(false)
     }

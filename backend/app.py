@@ -66,6 +66,18 @@ class SafeBatchNormalization(tf.keras.layers.BatchNormalization):
         kwargs.pop("adjustment", None)
         super().__init__(*args, **kwargs)
 
+class SafeReLU(tf.keras.layers.ReLU):
+    """ReLU activation that handles Keras 2.x ↔ 3.x compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
+class SafeActivation(tf.keras.layers.Activation):
+    """Activation layer that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
 # Load environment variables
 load_dotenv()
 
@@ -122,6 +134,8 @@ def load_model_with_fallback():
         "InputLayer": SafeInputLayer,
         "Conv2D": SafeConv2D,
         "BatchNormalization": SafeBatchNormalization,
+        "ReLU": SafeReLU,
+        "Activation": SafeActivation,
     }
     
     # Store errors to avoid Python 3.10+ exception scoping issues

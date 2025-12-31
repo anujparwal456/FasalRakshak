@@ -57,6 +57,15 @@ class SafeConv2D(tf.keras.layers.Conv2D):
         kwargs.pop("dtype", None)  # Remove problematic dtype objects
         super().__init__(*args, **kwargs)
 
+class SafeBatchNormalization(tf.keras.layers.BatchNormalization):
+    """BatchNormalization layer that handles Keras 2.x ↔ 3.x compatibility"""
+    def __init__(self, *args, **kwargs):
+        # Remove problematic config keys
+        kwargs.pop("dtype", None)
+        kwargs.pop("virtual_batch_size", None)
+        kwargs.pop("adjustment", None)
+        super().__init__(*args, **kwargs)
+
 # Load environment variables
 load_dotenv()
 
@@ -112,6 +121,7 @@ def load_model_with_fallback():
         "Dense": SafeDense,
         "InputLayer": SafeInputLayer,
         "Conv2D": SafeConv2D,
+        "BatchNormalization": SafeBatchNormalization,
     }
     
     # Store errors to avoid Python 3.10+ exception scoping issues

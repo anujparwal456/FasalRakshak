@@ -90,6 +90,30 @@ class SafeGlobalAveragePooling2D(tf.keras.layers.GlobalAveragePooling2D):
         kwargs.pop("dtype", None)
         super().__init__(*args, **kwargs)
 
+class SafeZeroPadding2D(tf.keras.layers.ZeroPadding2D):
+    """ZeroPadding2D that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
+class SafeMaxPooling2D(tf.keras.layers.MaxPooling2D):
+    """MaxPooling2D that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
+class SafeFlatten(tf.keras.layers.Flatten):
+    """Flatten that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
+class SafeDropout(tf.keras.layers.Dropout):
+    """Dropout that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
 # Load environment variables
 load_dotenv()
 
@@ -112,7 +136,7 @@ app.register_blueprint(chat_bp)
 # ================================
 
 def clean_dtype_policy_recursive(obj):
-    """Recursively remove DTypePolicy and incompatible Keras 3.x config from model config"""
+    """Aggressively clean Keras 3.x config to load with Keras 2.x"""
     if isinstance(obj, dict):
         # Replace DTypePolicy objects
         if obj.get('class_name') == 'DTypePolicy':
@@ -121,9 +145,19 @@ def clean_dtype_policy_recursive(obj):
         # Clean problematic config keys from layer configs
         if 'config' in obj and isinstance(obj['config'], dict):
             config = obj['config']
-            # Remove Keras 3.x specific keys that break Keras 2.x
-            for key in ['dtype', 'quantization_config', 'backend', 'optional', 'sparse', 'ragged', 'virtual_batch_size', 'adjustment']:
+            # Aggressive removal of Keras 3.x specific keys
+            problematic_keys = [
+                'dtype', 'quantization_config', 'backend', 'optional', 'sparse', 
+                'ragged', 'virtual_batch_size', 'adjustment', 'autocast', 
+                'tf_data_experimental_ops_enabled', 'experimental_enable_dispatch'
+            ]
+            for key in problematic_keys:
                 config.pop(key, None)
+            
+            # Remove dtype from nested trainable/non_trainable lists
+            for subkey in list(config.keys()):
+                if isinstance(config[subkey], dict):
+                    config[subkey].pop('dtype', None)
         
         # Clean all nested objects
         for key in list(obj.keys()):
@@ -157,6 +191,10 @@ def load_model_with_fallback():
         "Activation": SafeActivation,
         "DepthwiseConv2D": SafeDepthwiseConv2D,
         "GlobalAveragePooling2D": SafeGlobalAveragePooling2D,
+        "ZeroPadding2D": SafeZeroPadding2D,
+        "MaxPooling2D": SafeMaxPooling2D,
+        "Flatten": SafeFlatten,
+        "Dropout": SafeDropout,
     }
     
     # Store errors to avoid Python 3.10+ exception scoping issues

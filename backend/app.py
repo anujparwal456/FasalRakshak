@@ -114,6 +114,24 @@ class SafeDropout(tf.keras.layers.Dropout):
         kwargs.pop("dtype", None)
         super().__init__(*args, **kwargs)
 
+class SafeAdd(tf.keras.layers.Add):
+    """Add layer that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
+class SafeMultiply(tf.keras.layers.Multiply):
+    """Multiply layer that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
+class SafeReshape(tf.keras.layers.Reshape):
+    """Reshape layer that handles compatibility"""
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("dtype", None)
+        super().__init__(*args, **kwargs)
+
 # Load environment variables
 load_dotenv()
 
@@ -169,18 +187,12 @@ def clean_dtype_policy_recursive(obj):
 
 def load_model_with_fallback():
     """
-    Load model with multiple fallback strategies:
-    1. Standard Keras load
-    2. H5py + config patch (for Keras 3.x models)
-    3. TensorFlow SavedModel load
+    Load Keras model with multiple fallback strategies
     """
     model_path = "models/MobileNetV2_best.h5"
     
     if not os.path.exists(model_path):
-        raise FileNotFoundError(
-            f"❌ Model not found at {model_path}\n"
-            "Please ensure the model file exists in the models/ directory"
-        )
+        raise FileNotFoundError(f"Model not found at {model_path}")
     
     custom_objects = {
         "Dense": SafeDense,
@@ -195,92 +207,74 @@ def load_model_with_fallback():
         "MaxPooling2D": SafeMaxPooling2D,
         "Flatten": SafeFlatten,
         "Dropout": SafeDropout,
+        "Add": SafeAdd,
+        "Multiply": SafeMultiply,
+        "Reshape": SafeReshape,
     }
     
-    # Store errors to avoid Python 3.10+ exception scoping issues
-    error_e1 = None
-    error_e2 = None
-    error_e3 = None
+    errors = []
     
-    # Strategy 1: Standard load (for native Keras models)
+    # Try 1: Direct load
     try:
-        print("  [1/3] Attempting standard Keras load...")
-        model = tf.keras.models.load_model(
-            model_path,
-            compile=False,
-            custom_objects=custom_objects
-        )
-        print("      ✅ Standard load succeeded")
+        print("  [1] Attempting direct Keras load...")
+        model = tf.keras.models.load_model(model_path, compile=False, custom_objects=custom_objects)
+        print("      SUCCESS")
         return model
     except Exception as e:
-        error_e1 = str(e)[:100]
-        print(f"      ⚠️  Standard load failed: {error_e1}")
+        errors.append(str(e)[:80])
+        print(f"      FAILED: {errors[-1]}")
     
-    # Strategy 2: H5py + aggressive config patch (for mixed Keras versions)
+    # Try 2: H5py config patch
     try:
-        print("  [2/3] Attempting H5py + config patch...")
+        print("  [2] Attempting H5py + config patch...")
         with h5py.File(model_path, 'r') as f:
-            if 'model_config' not in f.attrs:
-                raise ValueError("No model_config in H5 file")
-            
-            # Load and clean config
-            config = json.loads(f.attrs['model_config'])
+            config_str = f.attrs['model_config']
+            if isinstance(config_str, bytes):
+                config_str = config_str.decode('utf-8')
+            config = json.loads(config_str)
             config = clean_dtype_policy_recursive(config)
-            
-            # Rebuild model
             model = tf.keras.Model.from_config(config, custom_objects=custom_objects)
-            
-            # Load weights
             try:
                 model.load_weights(model_path)
-            except Exception as we:
-                print(f"      ⚠️  Could not load weights: {str(we)[:50]}")
-            
-            print("      ✅ H5py patch succeeded")
-            return model
-    except Exception as e:
-        error_e2 = str(e)[:100]
-        print(f"      ⚠️  H5py patch failed: {error_e2}")
-    
-    # Strategy 3: Load with less strict validation
-    try:
-        print("  [3/3] Attempting lenient load...")
-        model = tf.keras.models.load_model(
-            model_path,
-            compile=False,
-            custom_objects=custom_objects
-        )
-        print("      ✅ Lenient load succeeded")
+            except:
+                pass
+        print("      SUCCESS")
         return model
     except Exception as e:
-        error_e3 = str(e)[:100]
-        print(f"      ⚠️  Lenient load failed: {error_e3}")
-        raise RuntimeError(
-            f"All model loading strategies failed:\n"
-            f"1. Standard: {error_e1}\n"
-            f"2. H5py: {error_e2}\n"
-            f"3. Lenient: {error_e3}"
-        )
+        errors.append(str(e)[:80])
+        print(f"      FAILED: {errors[-1]}")
+    
+    # Try 3: Retry without custom objects
+    try:
+        print("  [3] Attempting load without custom objects...")
+        model = tf.keras.models.load_model(model_path, compile=False)
+        print("      SUCCESS")
+        return model
+    except Exception as e:
+        errors.append(str(e)[:80])
+        print(f"      FAILED: {errors[-1]}")
+    
+    raise RuntimeError(f"All load attempts failed: {errors}")
 
 # ================================
 # INITIALIZE MODEL AT STARTUP
 # ================================
 print("\n" + "="*60)
-print("🔄 Initializing FasalRakshak Backend...")
+print("Initializing FasalRakshak Backend...")
 print("="*60)
 
 model = None
 try:
-    print("📦 Loading TensorFlow model...")
+    print("Loading TensorFlow model...")
     model = load_model_with_fallback()
-    print("✅ Model loaded successfully!")
+    print("SUCCESS! Model loaded.")
 except Exception as e:
-    print(f"\n❌ CRITICAL ERROR: {e}")
+    print(f"\nERROR loading model: {e}")
     print("\nBackend will run but predictions will fail.")
     print("Please check:")
-    print("  • Model file exists at backend/models/MobileNetV2_best.h5")
-    print("  • File is not corrupted")
-    print("  • TensorFlow/Keras versions are compatible")
+    print("  * Model file exists at backend/models/MobileNetV2_best.h5")
+    print("  * File is not corrupted")
+    print("  * TensorFlow/Keras versions are compatible")
     model = None
 
 print("="*60 + "\n")

@@ -13,7 +13,6 @@
 [Features](#-key-features) • [Demo](#-live-demo) • [Tech Stack](#️-tech-stack) • [Installation](#-installation) • [API](#-api-endpoints) • [Report Sample](#-sample-disease-report)
 
 ---
-
 </div>
 
 ## 📖 About The Project

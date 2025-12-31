@@ -644,8 +644,8 @@ in the Software without restriction...
 Ramdeobaba College of Engineering & Management, Nagpur
 
 [![GitHub](https://img.shields.io/badge/GitHub-anujparwal456-black?style=for-the-badge&logo=github)](https://github.com/anujparwal456)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://linkedin.com/in/anujparwal)
-[![Email](https://img.shields.io/badge/Email-Contact-red?style=for-the-badge&logo=gmail)](mailto:anujparwal@gmail.com)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/anuj-parwal-805829283/)
+[![Email](https://img.shields.io/badge/Email-Contact-red?style=for-the-badge&logo=gmail)](mailto:anujparwal456089@gmail.com)
 
 *Passionate about leveraging AI for social impact and agricultural innovation*
 

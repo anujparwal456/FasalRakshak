@@ -6,7 +6,7 @@
 
 *Protecting crops with the power of Artificial Intelligence*
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-success?style=for-the-badge&logo=vercel)](https://fasal-rakshak-82q2.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-success?style=for-the-badge&logo=vercel)](https://fasal-rakshak.vercel.app/)
 [![Backend API](https://img.shields.io/badge/API-Render-blue?style=for-the-badge&logo=render)](https://fasalrakshak.onrender.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
